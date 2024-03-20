@@ -1,6 +1,9 @@
+import json
 import boto3
 import keys_config as keys
-
+from botocore.exceptions import ClientError
+import requests
+import os
 
 #https://boto3.amazonaws.com/v1/documentation/api/latest/guide/dynamodb.html
 
@@ -76,14 +79,21 @@ def initFunctions():
     #print(responseDB)
 
     if 'Init_users' not in responseDB['TableNames']:
-        createTable()
+        createTableUsers()
     else:
-        print("tables already initialized")
+        print("user table already initialized")
+
+    if 'music' not in responseDB['TableNames']:
+        createTableMusic()
+    else:
+        print("music table already initialized")
+    
+    s3UploadingInit()
 
 
 
 
-def createTable():
+def createTableUsers():
     dynamodb_client = boto3.resource('dynamodb', region_name='ap-southeast-2')
 
     
@@ -117,11 +127,11 @@ def createTable():
         )
 
     newTable.wait_until_exists()
-    print("table created")
-    initItems()
+    print("user table created")
+    initItemsUsers()
 
     
-def initItems():
+def initItemsUsers():
 
     dynamodb = boto3.resource('dynamodb', region_name='ap-southeast-2')
     table = dynamodb.Table('Init_users')
@@ -175,6 +185,103 @@ def initItems():
 
 
 
+
+def createTableMusic():
+    dynamodb_client = boto3.resource('dynamodb', region_name='ap-southeast-2')
+
+    
+    newTable = dynamodb_client.create_table(
+        TableName='music',
+        KeySchema=[
+            {
+                'AttributeName': 'title',
+                'KeyType': 'HASH'  # HASH for the primary key
+            },
+            {
+                'AttributeName': 'artist',
+                'KeyType': 'RANGE'  # RANGE for the sort key
+            },
+        ],
+    AttributeDefinitions=[
+            {
+                'AttributeName': 'title',
+                'AttributeType': 'S'  # S for String type
+            },
+            {
+                'AttributeName': 'artist',
+                'AttributeType': 'S'  # S for String type
+            },
+           
+        ],
+    ProvisionedThroughput={
+            'ReadCapacityUnits': 5,
+            'WriteCapacityUnits': 5
+        }
+        )
+
+    newTable.wait_until_exists()
+    print("music table created")
+    initItemsMusic()
+
+
+
+
+def initItemsMusic():
+    
+    dynamodb = boto3.resource('dynamodb', region_name='ap-southeast-2')
+    table = dynamodb.Table('music')
+
+    jsonFile = open('a1.json')
+    musicData = json.load(jsonFile)#here
+    jsonFile.close()
+    
+    with table.batch_writer() as batch:
+        for item in musicData['songs']:
+            batch.put_item(Item = item)
+    
+    print("music items initialized")
+
+
+
+#https://cdn.discordapp.com/attachments/854289474267381770/1210182394519494656/IMG_20240222_170735_147.jpg?ex=660550ae&is=65f2dbae&hm=72300f07bf156bd8a27ec6bc806c3d2aadf310fb92f4e54302cdffeb09c77177&
+#https://stackoverflow.com/questions/14346065/upload-image-available-at-public-url-to-s3-using-boto
+    
+def s3UploadingInitDepre():
+    s3_Client = boto3.client('s3')
+    response = s3_Client.list_buckets()
+    print( response['Buckets'])
+
+    imgURL = 'https://cdn.discordapp.com/attachments/854289474267381770/1210182394519494656/IMG_20240222_170735_147.jpg?ex=660550ae&is=65f2dbae&hm=72300f07bf156bd8a27ec6bc806c3d2aadf310fb92f4e54302cdffeb09c77177&'
+    r = requests.get(imgURL, stream=True)
+
+    bucketName = 'test-bucket-komssa'
+    key = 'initTest'
+
+    bucket = s3_Client.Bucket(bucketName)
+    bucket.upload_fileobj(r.raw, key)
+
+
+def s3UploadingInit():
+    s3_Client = boto3.client('s3')
+    response = s3_Client.list_buckets()
+
+    print('Buckets:')
+    for x in response['Buckets']:
+        print('     ' + x['Name'])
+
+    bucketName = 'test-bucket-komssa'
+    
+    object_name=None
+    
+    if object_name is None:
+        object_name = os.path.basename('Mori2.jpg') #changes name of file
+
+    try:
+        response = s3_Client.upload_file('Mori.jpg', bucketName, object_name)
+        print('uploaded image')
+    except ClientError as e:
+        return False
+    return True
 
 def CheckingID():
 
