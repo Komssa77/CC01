@@ -2,8 +2,10 @@ import json
 import boto3
 import keys_config as keys
 from botocore.exceptions import ClientError
+from PIL import Image
 import requests
 import os
+from urllib.request import urlopen
 
 #https://boto3.amazonaws.com/v1/documentation/api/latest/guide/dynamodb.html
 
@@ -130,7 +132,10 @@ def createTableUsers():
     print("user table created")
     initItemsUsers()
 
-    
+
+
+'https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-uploading-files.html'
+
 def initItemsUsers():
 
     dynamodb = boto3.resource('dynamodb', region_name='ap-southeast-2')
@@ -260,6 +265,8 @@ def s3UploadingInitDepre():
     bucket = s3_Client.Bucket(bucketName)
     bucket.upload_fileobj(r.raw, key)
 
+#https://stackoverflow.com/questions/7391945/how-do-i-read-image-data-from-a-url-in-python
+
 
 def s3UploadingInit():
     s3_Client = boto3.client('s3')
@@ -272,13 +279,23 @@ def s3UploadingInit():
     bucketName = 'test-bucket-komssa'
     
     object_name=None
-    
-    if object_name is None:
-        object_name = os.path.basename('Mori2.jpg') #changes name of file
+    url = 'https://raw.githubusercontent.com/davidpots/songnotes_cms/master/public/images/artists/TheTallestManOnEarth.jpg'
+    #im = Image.open(requests.get(url, stream=True).raw)
 
+    img_data = requests.get(url).content
+    with open('image_name.jpg', 'wb') as handler:
+        handler.write(img_data)
+
+    if object_name is None:
+        object_name = os.path.basename('Mori2') #changes name of file
+    
+    #more to be done
     try:
         response = s3_Client.upload_file('Mori.jpg', bucketName, object_name)
         print('uploaded image')
+        response = s3_Client.upload_file('image_name.jpg', bucketName, os.path.basename('Mori0'))
+        print('uploaded image')
+
     except ClientError as e:
         return False
     return True
