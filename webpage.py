@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 # Dummy user data for demonstration purposes
 
-users = {'username': 'password',
+users = {'email': 'password',
          'Admin': 'P1'}
 
 @app.route('/')
@@ -17,10 +17,10 @@ def home():
 def login():
 
     #aws_controller.get_items()
-    username = request.form['username']
+    email = request.form['email']
     password = request.form['password']
 
-    p = dynoTest.checkLoginDetails(username,password)
+    p = dynoTest.checkLoginDetails(email,password)
 
     if p:
         return redirect(url_for('success'))

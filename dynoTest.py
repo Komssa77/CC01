@@ -2,10 +2,9 @@ import json
 import boto3
 import keys_config as keys
 from botocore.exceptions import ClientError
-from PIL import Image
+from boto3.dynamodb.conditions import Key, Attr
 import requests
 import os
-from urllib.request import urlopen
 
 #https://boto3.amazonaws.com/v1/documentation/api/latest/guide/dynamodb.html
 
@@ -90,7 +89,7 @@ def initFunctions():
     else:
         print("music table already initialized")
     
-    s3UploadingInit()
+    #s3UploadingInit() #uploads all initial images
 
 
 
@@ -248,25 +247,8 @@ def initItemsMusic():
 
 
 
-#https://cdn.discordapp.com/attachments/854289474267381770/1210182394519494656/IMG_20240222_170735_147.jpg?ex=660550ae&is=65f2dbae&hm=72300f07bf156bd8a27ec6bc806c3d2aadf310fb92f4e54302cdffeb09c77177&
-#https://stackoverflow.com/questions/14346065/upload-image-available-at-public-url-to-s3-using-boto
-    
-def s3UploadingInitDepre():
-    s3_Client = boto3.client('s3')
-    response = s3_Client.list_buckets()
-    print( response['Buckets'])
-
-    imgURL = 'https://cdn.discordapp.com/attachments/854289474267381770/1210182394519494656/IMG_20240222_170735_147.jpg?ex=660550ae&is=65f2dbae&hm=72300f07bf156bd8a27ec6bc806c3d2aadf310fb92f4e54302cdffeb09c77177&'
-    r = requests.get(imgURL, stream=True)
-
-    bucketName = 'test-bucket-komssa'
-    key = 'initTest'
-
-    bucket = s3_Client.Bucket(bucketName)
-    bucket.upload_fileobj(r.raw, key)
-
 #https://stackoverflow.com/questions/7391945/how-do-i-read-image-data-from-a-url-in-python
-
+#https://stackoverflow.com/questions/30229231/python-save-image-from-url
 
 def s3UploadingInit():
     s3_Client = boto3.client('s3')
@@ -277,28 +259,33 @@ def s3UploadingInit():
         print('     ' + x['Name'])
 
     bucketName = 'test-bucket-komssa'
-    
-    object_name=None
-    url = 'https://raw.githubusercontent.com/davidpots/songnotes_cms/master/public/images/artists/TheTallestManOnEarth.jpg'
-    #im = Image.open(requests.get(url, stream=True).raw)
 
-    img_data = requests.get(url).content
-    with open('image_name.jpg', 'wb') as handler:
-        handler.write(img_data)
+    jsonFile = open('a1.json')
+    musicData = json.load(jsonFile)#here
+    jsonFile.close()
 
-    if object_name is None:
-        object_name = os.path.basename('Mori2') #changes name of file
-    
-    #more to be done
-    try:
-        response = s3_Client.upload_file('Mori.jpg', bucketName, object_name)
-        print('uploaded image')
-        response = s3_Client.upload_file('image_name.jpg', bucketName, os.path.basename('Mori0'))
-        print('uploaded image')
+    for x in musicData['songs']:
+        
+        #print(x)
+        img_data = requests.get(x['img_url']).content
+        object_name = os.path.basename(x['img_url'])
+                                       
+        with open('ImageTemp/' + object_name, 'wb') as handler:
+            handler.write(img_data)
 
-    except ClientError as e:
-        return False
-    return True
+        if object_name is None:
+            object_name = os.path.basename('Mori2') #changes name of file
+        
+        #more to be done
+        try:
+            response = s3_Client.upload_file('ImageTemp/' + object_name, bucketName, os.path.basename(x['img_url']))
+            print('uploaded image ' + object_name)
+
+        except ClientError as e:
+            print('Broken')
+
+
+
 
 def CheckingID():
 
@@ -345,34 +332,30 @@ def addingElements():
 
 
 
-def checkLoginDetails(usernameInput, passwordInput):
+def checkLoginDetails(emailInput, passwordInput):
     
     dynamodb_resource = boto3.resource('dynamodb', region_name='ap-southeast-2')
-    table = dynamodb_resource.Table("Users")
+    table = dynamodb_resource.Table("Init_users")
 
+    print("checking email: " + emailInput)
     # Perform the query operation
     response = table.scan(
-        FilterExpression='Username = :username',
-        ExpressionAttributeValues={
-            ':username': usernameInput
-        }
+        #KeyConditionExpression=Key('email').eq(emailInput)
+        FilterExpression=Attr('email').eq(emailInput)
     )
-
-    #print(response)
-    if response['Count'] > 0:
-        info = response['Items'][0]
-        #print(info)
-        #print(info['Password'])
-
-        if info['Password'] == passwordInput:
+    
+    if (response['Count'] == 1):
+        print(response['Items'])
+        x = response['Items'][0]
+        if x['password'] == passwordInput:
             print("Login successful!")
             return True
         else:
             print("Login failed. Username or password incorrect.")
             return False
     else:
+        print("Login failed. Username or password incorrect.")
         return False
-
 
 def new():
     myWords = ["Not","everything","that","counts","can","be","counted","and","not","everything","that","can","be","counted","counts"]
