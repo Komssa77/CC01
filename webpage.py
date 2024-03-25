@@ -13,9 +13,12 @@ users = {'email': 'password',
 def home():
     return render_template('login.html')
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
 
+    print(request.form['action'])
+    if request.form['action'] == 'Register':
+        return redirect(url_for('register'))
     #aws_controller.get_items()
     email = request.form['email']
     password = request.form['password']
@@ -26,6 +29,21 @@ def login():
         return redirect(url_for('success'))
     else:
         return render_template('login.html', error=True)
+    
+
+@app.route('/register', methods=['GET','POST'])
+def register():
+
+    #print(request.form['action'])
+
+    if request.method == 'GET':
+        return render_template('register.html')
+    
+    if request.form['action'] == 'Login':
+        return redirect(url_for('login'))
+    else:
+        return render_template('register.html')
+
 
 @app.route('/success')
 def success():

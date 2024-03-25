@@ -3,22 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=100.0">
-    <title>Login</title>
+    <title>Register</title>
 </head>
 <body>
-    <h2>Login Page</h2>
+    <h2>Register Page</h2>
     
-    <form action="/login" action="" method="POST">
+    <form action="/register" action="" method="POST">
         <label for="email">Email:</label><br>
         <input type="text" id="email" name="email"><br>
+        <label for="username">Username:</label><br>
+        <input type="text" id="username" name="username"><br>
         <label for="password">Password:</label><br>
         <input type="password" id="password" name="password"><br>
 
         {% if error %}
             <p style="color: red;">Incorrect username or password!</p>
-        {% endif %} 
-        <input type="submit" name = "action" value="Login">
+        {% endif %}
         <input type="submit" name = "action" value="Register">
+        <input type="submit" name = "action" value="Login">
     </form>
 </body>
 </html>
