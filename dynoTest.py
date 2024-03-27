@@ -192,13 +192,26 @@ def addUser(emailInput,usernameInput,passwordInput):
     dynamodb = boto3.resource('dynamodb', region_name='ap-southeast-2')
     table = dynamodb.Table('Init_users')
 
-    newUser = [{
-            'username': usernameInput,
-            'email': emailInput,
-            'password': passwordInput,
-        }]
+    response = table.scan(
+        FilterExpression=Attr('email').eq(emailInput)
+    )
+    
+    print('found ' + str(response['Count']))
+    if (response['Count'] > 0):
+        print('email already exists')
+        return False
+    else:
+        newUser = {
+                'username': usernameInput,
+                'email': emailInput,
+                'password': passwordInput,
+            }
 
-    table.put_item(Item = newUser)
+        response = table.put_item(Item = newUser)
+        print(response)
+        return True
+
+
 
 def createTableMusic():
     dynamodb_client = boto3.resource('dynamodb', region_name='ap-southeast-2')

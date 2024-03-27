@@ -16,20 +16,23 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
 
-    print(request.form['action'])
-    if request.form['action'] == 'Register':
-        return redirect(url_for('register'))
-    #aws_controller.get_items()
-    email = request.form['email']
-    password = request.form['password']
-
-    p = dynoTest.checkLoginDetails(email,password)
-
-    if p:
-        return redirect(url_for('success'))
+    #print(request.form['action'])
+    if request.method == 'GET':
+        return render_template('login.html')
     else:
-        return render_template('login.html', error=True)
-    
+        if request.form['action'] == 'Register':
+            return redirect(url_for('register'))
+        #aws_controller.get_items()
+        email = request.form['email']
+        password = request.form['password']
+
+        p = dynoTest.checkLoginDetails(email,password)
+
+        if p:
+            return redirect(url_for('success'))
+        else:
+            return render_template('login.html', error=True)
+        
 
 @app.route('/register', methods=['GET','POST'])
 def register():
@@ -41,8 +44,16 @@ def register():
     
     if request.form['action'] == 'Login':
         return redirect(url_for('login'))
-    else:
-        return render_template('register.html')
+    elif request.form['action'] == 'Register':
+        email = request.form['email']
+        password = request.form['password']
+        username = request.form['username']
+        p = dynoTest.addUser(email,username,password)
+        print(p)
+        if p:
+            return redirect(url_for('login'))
+        else:
+            return render_template('register.html',error=True)
 
 
 @app.route('/success')
